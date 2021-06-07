@@ -1,0 +1,328 @@
+﻿@using PagedList.Mvc;
+@model PagedList.IPagedList<PetFinderAPI.Models.Pet>
+
+@{ ViewBag.Title = "Pets"; }
+
+
+@section css {
+    <link rel="stylesheet" type="text/css" href="~/Content/css/dataTables.bootstrap4.min.css">
+
+    <link rel="stylesheet" type="text/css" href="~/Content/css/select2.min.css">
+    <link rel="stylesheet" type="text/css" href="~/Content/css//bootstrap-datetimepicker.min.css">
+    <link href="/Content/PagedList.css" rel="stylesheet" type="text/css" />
+}
+<div class="content">
+    <div class="row">
+        <div class="col-sm-4 col-3">
+            <h4 class="page-title">Pets</h4>
+        </div>
+        <div class="col-sm-8 col-9 text-right m-b-20">
+            <a href="@Url.Action("Store", "Pets")" class="btn btn-primary btn-rounded float-right"><i class="fa fa-plus"></i> Add pet</a>
+        </div>
+    </div>
+    <div class="row filter-row">
+        <div class="col-sm-6 col-md-3">
+            <div class="form-group form-focus">
+                <label class="focus-label">Pet ID</label>
+                <input id="petId" type="text" class="form-control floating" onchange="getPetId()">
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="form-group form-focus">
+                <label class="focus-label">Pet Name</label>
+                <input id="name" type="text" class="form-control floating" onchange="getPetName()">
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="form-group form-focus select-focus">
+                <label class="focus-label">Type</label>
+                <select id="type" class="select floating" onchange="getPetType()">
+                    <option>Select Type</option>
+                    @foreach (var type in ViewBag.PetType)
+                    {
+                        <option value="@type.Id">@type.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <a href="#" class="btn btn-success btn-block"> Search </a>
+        </div>
+    </div>
+    <div class="row doctor-grid" id="DataSearching">
+        @foreach (var pet in Model)
+        {
+            <div class="col-md-4 col-sm-4  col-lg-3">
+                <div class="profile-widget">
+                    <div class="doctor-img">
+                        <a class="avatar" href="@Url.Action("EditPet", "Pets",new {id=pet.Id})">
+                            @*<img alt="" src="@pet.Avatar">*@
+                            @if (String.IsNullOrEmpty(@pet.Avatar))
+                            {
+                                <img src="~/Content/img/user.jpg" class="rounded-circle"> }
+                            else
+                            { @*<img src="/App_data/uploads/@pet.Avatar" class="rounded-circle">*@
+                            <img id="avt" alt="" src="~/Content/img/uploads/@pet.Avatar">}
+                        </a>
+                    </div>
+                    <div class="dropdown profile-action">
+                        <a href="#" class="action-icon dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item" href="@Url.Action("EditPet", "Pets",new {id=pet.Id})"><i class="fa fa-pencil m-r-5"></i> Edit</a>
+                            <a class="dropdown-item" data-toggle="modal" data-target="#delete_doctor_@pet.Id"><i class="fa fa-trash-o m-r-5"></i> Delete</a>
+                        </div>
+                    </div>
+                    <h4 class="doctor-name text-ellipsis"><a href="profile.html">@pet.Name</a></h4>
+                    <div class="doc-prof">@pet.User.UserName</div>
+                    <div class="user-country">
+                        <i class="fa fa-map-marker"></i>@pet.Address
+                    </div>
+                </div>
+            </div>
+            <div id="delete_doctor_@pet.Id" class="modal fade delete-modal" role="dialog">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-body text-center">
+                            <img src="assets/img/sent.png" alt="" width="50" height="46">
+                            <h3>Are you sure want to delete this pet?</h3>
+                            <div class="m-t-20">
+                                <a href="#" class="btn btn-white" data-dismiss="modal">Close</a>
+                                @*<button type="submit" class="btn btn-danger">Delete</button>*@
+                                <a href="@Url.Action("Delete", "Pets", new { id = pet.Id })" class="btn btn-danger">Delete</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>}
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            Trang @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) / @Model.PageCount
+
+            @Html.PagedListPager(Model, page => Url.Action("Index",
+                          new { page }))
+        </div>
+    </div>
+</div>
+
+@section scripts {
+
+    <script src="~/Scripts/bootstrap.min.js"></script>
+    <script src="~/Scripts/Chart.bundle.js"></script>
+    <script src="~/Scripts/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Scripts/jquery.dataTables.min.js"></script>
+
+    <script src="~/Scripts/jquery.slimscroll.js"></script>
+    <script src="~/Scripts/select2.min.js"></script>
+    <script src="~/Scripts/moment.min.js"></script>
+    <script src="~/Scripts/bootstrap-datetimepicker.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            function readURL(input) {
+                if (input.files && input.files[0]) {
+                    var reader = new FileReader();
+
+                    reader.onload = function (e) {
+                        $('#avt').attr('src', e.target.result);
+                    }
+
+                    reader.readAsDataURL(input.files[0]); // convert to base64 string
+                }
+            }
+
+            $("#Avatar").change(function () {
+                readURL(this);
+            });
+        });</script>
+    <script>
+    function getPetId() {
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("GetPetID", "Pets")',
+            data: '{petID: "' + $("#petId").val() + '" }',
+            contentType: "application/json",
+            dataType: "json",
+            success: OnSuccess
+        });
+        var SetData = $("#DataSearching");
+        function OnSuccess(result) {
+            SetData.html("");
+            if (result.length == 0) {
+                SetData.append('<tr style="color:red"><td colspan="3">No Match Data</td></tr>')
+            }
+            else {
+                $.each(result, function (index, value) {
+                    alert(value.Id);
+                    var Data =
+                '<div class="col-md-4 col-sm-4  col-lg-3">'+
+                      '<div class="profile-widget">'+
+                            '<div class="doctor-img">'+
+                                '<a class="avatar" href="/admin/Pets/EditPet/' + value.Id + '">' +
+                                     '<img src="/Content/img/uploads/' + value.Avatar+'" class="rounded-circle">' +
+                                '</a>'+
+                        ' </div>' +
+                        '<div class="dropdown profile-action">'+
+                        '<a href="#" class="action-icon dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>'+
+                        '<div class="dropdown-menu dropdown-menu-right">'+
+                            '<a class="dropdown-item" href="/admin/Users/Edit/' + value.Id + '"><i class="fa fa-pencil m-r-5"></i> Edit</a>' +
+                            '<a class="dropdown-item" data-toggle="modal" data-target="#delete_doctor_' + value.Id + '"><i class="fa fa-trash-o m-r-5"></i> Delete</a>' +
+                        '</div>'+
+                     '</div>' +
+                        '<h4 class="doctor-name text-ellipsis"><a href="profile.html">' + value.Name + '</a></h4>' +
+                        '<div class="doc-prof">' + value.User.UserName + '</div>' +
+                            '<div class="user-country">' +
+                                '<i class="fa fa-map-marker"></i>' + value.Address +
+                             '</div>'+
+                        '</div>'+
+                 '</div>'+
+                      '</div>'+
+
+                '<div id="delete_doctor_' + value.Id + '" class="modal fade delete-modal" role="dialog">'+
+                    '<div class="modal-dialog modal-dialog-centered">'+
+                        '<div class="modal-content">'+
+                            '<div class="modal-body text-center">'+
+                                '<img src="assets/img/sent.png" alt="" width="50" height="46">'+
+                                '<h3>Are you sure want to delete this Doctor?</h3>'+
+                                '<div class="m-t-20">'+
+                                    '<a href="#" class="btn btn-white" data-dismiss="modal">Close</a>'+
+                                     '<a href="/admin/Pets/Delete/' + value.Id + '" class="btn btn-danger">Delete</a>' +
+                                '</div>'+
+                            '</div>'+
+                        '</div>'+
+                    '</div>'+
+                '</div>'
+                    SetData.append(Data);
+                });
+            }
+        }
+    }
+    </script>
+    <script>
+    function getPetName() {
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("GetPetName", "Pets")',
+            data: '{name: "' + $("#name").val() + '" }',
+            contentType: "application/json",
+            dataType: "json",
+            success: OnSuccess
+        });
+        var SetData = $("#DataSearching");
+        function OnSuccess(result) {
+            SetData.html("");
+            if (result.length == 0) {
+                SetData.append('<tr style="color:red"><td colspan="3">No Match Data</td></tr>')
+            }
+            else {
+                $.each(result, function (index, value) {
+                    var Data =
+                '<div class="col-md-4 col-sm-4  col-lg-3">'+
+                      '<div class="profile-widget">'+
+                            '<div class="doctor-img">'+
+                                '<a class="avatar" href="/admin/Pets/EditPet/' + value.Id + '">' +
+                                     '<img src="/Content/img/uploads/' + value.Avatar+'" class="rounded-circle">' +
+                                '</a>'+
+                        ' </div>' +
+                        '<div class="dropdown profile-action">'+
+                        '<a href="#" class="action-icon dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>'+
+                        '<div class="dropdown-menu dropdown-menu-right">'+
+                            '<a class="dropdown-item" href="/admin/Pet/EditPet/' + value.Id + '"><i class="fa fa-pencil m-r-5"></i> Edit</a>' +
+                            '<a class="dropdown-item" data-toggle="modal" data-target="#delete_doctor_' + value.Id + '"><i class="fa fa-trash-o m-r-5"></i> Delete</a>' +
+                        '</div>'+
+                     '</div>' +
+                        '<h4 class="doctor-name text-ellipsis"><a href="profile.html">' + value.Name + '</a></h4>' +
+                        '<div class="doc-prof">' + value.Name + '</div>' +
+                            '<div class="user-country">' +
+                                '<i class="fa fa-map-marker"></i>' + value.Address +
+                             '</div>'+
+                        '</div>'+
+                 '</div>'+
+                      '</div>'+
+
+                '<div id="delete_doctor_' + value.Id + '" class="modal fade delete-modal" role="dialog">'+
+                    '<div class="modal-dialog modal-dialog-centered">'+
+                        '<div class="modal-content">'+
+                            '<div class="modal-body text-center">'+
+                                '<img src="assets/img/sent.png" alt="" width="50" height="46">'+
+                                '<h3>Are you sure want to delete this Doctor?</h3>'+
+                                '<div class="m-t-20">'+
+                                    '<a href="#" class="btn btn-white" data-dismiss="modal">Close</a>'+
+                                     '<a href="/admin/Pets/Delete/' + value.Id + '" class="btn btn-danger">Delete</a>' +
+                                '</div>'+
+                            '</div>'+
+                        '</div>'+
+                    '</div>'+
+                '</div>'
+                    SetData.append(Data);
+                });
+            }
+        }
+    }
+    </script>
+    <script>
+    function getPetType() {
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("GetPetType", "Pets")',
+            data: '{idType: "' + $("#type").val() + '" }',
+            contentType: "application/json",
+            dataType: "json",
+            success: OnSuccess
+        });
+        var SetData = $("#DataSearching");
+        function OnSuccess(result) {
+            SetData.html("");
+            if (result.length == 0) {
+                SetData.append('<tr style="color:red"><td colspan="3">No Match Data</td></tr>')
+            }
+            else {
+                $.each(result, function (index, value) {
+                    var Data =
+                '<div class="col-md-4 col-sm-4  col-lg-3">'+
+                      '<div class="profile-widget">'+
+                            '<div class="doctor-img">'+
+                                '<a class="avatar" href="/admin/Pets/EditPet/' + value.Id + '">' +
+                                     '<img src="/Content/img/uploads/' + value.Avatar+'" class="rounded-circle">' +
+                                '</a>'+
+                        ' </div>' +
+                        '<div class="dropdown profile-action">'+
+                        '<a href="#" class="action-icon dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>'+
+                        '<div class="dropdown-menu dropdown-menu-right">'+
+                            '<a class="dropdown-item" href="/admin/Pet/EditPet/' + value.Id + '"><i class="fa fa-pencil m-r-5"></i> Edit</a>' +
+                            '<a class="dropdown-item" data-toggle="modal" data-target="#delete_doctor_' + value.Id + '"><i class="fa fa-trash-o m-r-5"></i> Delete</a>' +
+                        '</div>'+
+                     '</div>' +
+                        '<h4 class="doctor-name text-ellipsis"><a href="profile.html">' + value.Name + '</a></h4>' +
+                        '<div class="doc-prof">' + value.Name + '</div>' +
+                            '<div class="user-country">' +
+                                '<i class="fa fa-map-marker"></i>' + value.Address +
+                             '</div>'+
+                        '</div>'+
+                 '</div>'+
+                      '</div>'+
+
+                '<div id="delete_doctor_' + value.Id + '" class="modal fade delete-modal" role="dialog">'+
+                    '<div class="modal-dialog modal-dialog-centered">'+
+                        '<div class="modal-content">'+
+                            '<div class="modal-body text-center">'+
+                                '<img src="assets/img/sent.png" alt="" width="50" height="46">'+
+                                '<h3>Are you sure want to delete this Doctor?</h3>'+
+                                '<div class="m-t-20">'+
+                                    '<a href="#" class="btn btn-white" data-dismiss="modal">Close</a>'+
+                                     '<a href="/admin/Pets/Delete/' + value.Id + '" class="btn btn-danger">Delete</a>' +
+                                '</div>'+
+                            '</div>'+
+                        '</div>'+
+                    '</div>'+
+                '</div>'
+                    SetData.append(Data);
+                });
+            }
+        }
+    }
+    </script>
+
+    <script src="@Url.Content("~/Scripts/jquery.unobtrusive-ajax.min.js")" type="text/javascript"></script>
+}
+
+
